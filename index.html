@@ -5,7 +5,9 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Half Marathon">
 <meta name="theme-color" content="#111111">
+<link rel="apple-touch-icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' rx='20' fill='%23111'/><text y='.9em' font-size='80' x='10'>🏃</text></svg>">
 <title>Couch → Half Marathon</title>
 <style>
 * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
@@ -115,7 +117,6 @@ input, select, textarea { font-family: inherit; }
 .sauna-note { font-size: 12px; color: #C8BFB0; line-height: 1.5; }
 .water-box { background: #0A1520; border: 1px solid #3B82F633; border-radius: 8px; padding: 10px 12px; font-size: 12px; color: #A8C4D8; margin-top: 4px; line-height: 1.5; }
 
-/* TRACKER */
 .tracker-tabs { display: flex; gap: 6px; margin-bottom: 16px; flex-wrap: wrap; }
 .tracker-tab { background: #1A1A1A; border: 1px solid #2A2A2A; border-radius: 20px; padding: 7px 14px; font-size: 13px; color: #888; transition: all 0.15s; }
 .tracker-tab.active { background: #E8532A22; border-color: #E8532A88; color: #F5F0EB; font-weight: 700; }
@@ -152,13 +153,12 @@ input, select, textarea { font-family: inherit; }
 .add-set-btn { background: #2A2A2A; border: 1px solid #333; border-radius: 6px; padding: 6px 10px; font-size: 12px; color: #aaa; margin-top: 4px; }
 .rm-set-btn { background: none; border: none; color: #555; font-size: 16px; padding: 0; line-height: 1; }
 .rm-set-btn:active { color: #EF4444; }
-
 .pace-display { background: #10B98122; border: 1px solid #10B98144; border-radius: 8px; padding: 10px 12px; font-size: 13px; color: #10B981; font-weight: 600; margin-bottom: 14px; text-align: center; display: none; }
-
 .empty-state { text-align: center; padding: 32px 16px; color: #555; font-size: 13px; }
 .section-divider { display: flex; align-items: center; gap: 10px; margin: 18px 0 12px; }
 .section-divider span { font-weight: 700; font-size: 13px; color: #aaa; white-space: nowrap; }
 .section-divider hr { flex: 1; border: none; border-top: 1px solid #2A2A2A; }
+.offline-banner { display: none; background: #10B98122; border: 1px solid #10B98144; border-radius: 8px; padding: 8px 12px; font-size: 12px; color: #10B981; text-align: center; margin-bottom: 12px; }
 </style>
 </head>
 <body>
@@ -189,6 +189,7 @@ input, select, textarea { font-family: inherit; }
 </div>
 
 <div class="content">
+<div class="offline-banner" id="offline-banner">✓ Offline — all data saved locally</div>
 
 <!-- OVERVIEW -->
 <div class="section active" id="sec-overview">
@@ -284,7 +285,7 @@ input, select, textarea { font-family: inherit; }
   </div>
   <div class="card">
     <div class="card-title">🌡️ Sauna Protocol</div>
-    <p class="card-sub">Heat accelerates recovery but adds cardiovascular stress. Timing matters.</p>
+    <p class="card-sub">Heat accelerates recovery but adds cardiovascular stress.</p>
     <div id="sauna-items"></div>
     <div class="water-box">💧 Always hydrate 16oz before sauna + 16oz after. Electrolytes recommended after sessions over 15 minutes.</div>
   </div>
@@ -299,56 +300,33 @@ input, select, textarea { font-family: inherit; }
     <button class="tracker-tab" onclick="switchTracker('weight',this)">⚖️ Weight</button>
   </div>
 
-  <!-- RUNS TRACKER -->
+  <!-- RUNS -->
   <div class="tracker-section" id="tr-runs">
     <div class="card">
       <div class="card-title">Log a Run</div>
-      <div class="form-group">
-        <label class="form-label">Date</label>
-        <input type="date" class="form-input" id="run-date">
-      </div>
+      <div class="form-group"><label class="form-label">Date</label><input type="date" class="form-input" id="run-date"></div>
       <div class="form-row">
-        <div class="form-group">
-          <label class="form-label">Distance (mi)</label>
-          <input type="number" class="form-input" id="run-dist" placeholder="3.1" step="0.01" oninput="calcPace()">
-        </div>
-        <div class="form-group">
-          <label class="form-label">Time (mm:ss or h:mm:ss)</label>
-          <input type="text" class="form-input" id="run-time" placeholder="28:30" oninput="calcPace()">
-        </div>
+        <div class="form-group"><label class="form-label">Distance (mi)</label><input type="number" class="form-input" id="run-dist" placeholder="3.1" step="0.01" oninput="calcPace()"></div>
+        <div class="form-group"><label class="form-label">Time (mm:ss)</label><input type="text" class="form-input" id="run-time" placeholder="28:30" oninput="calcPace()"></div>
       </div>
       <div class="pace-display" id="pace-display">⚡ Pace: <span id="pace-val"></span> /mi</div>
-      <div class="form-group">
-        <label class="form-label">How'd it feel?</label>
-        <select class="form-input" id="run-feel">
-          <option value="">Select...</option>
-          <option>Easy 😌</option>
-          <option>Good 💪</option>
-          <option>Hard 😤</option>
-          <option>Rough 😵</option>
-        </select>
+      <div class="form-group"><label class="form-label">How'd it feel?</label>
+        <select class="form-input" id="run-feel"><option value="">Select...</option><option>Easy 😌</option><option>Good 💪</option><option>Hard 😤</option><option>Rough 😵</option></select>
       </div>
-      <div class="form-group">
-        <label class="form-label">Notes</label>
-        <textarea class="form-input" id="run-notes" rows="2" placeholder="Route, weather, knee felt ok..."></textarea>
-      </div>
+      <div class="form-group"><label class="form-label">Notes</label><textarea class="form-input" id="run-notes" rows="2" placeholder="Route, weather, knee felt ok..."></textarea></div>
       <button class="submit-btn" onclick="saveRun()">Save Run</button>
     </div>
     <div class="section-divider"><hr><span>Run History</span><hr></div>
     <div id="run-log"></div>
   </div>
 
-  <!-- LIFTING TRACKER -->
+  <!-- LIFTING -->
   <div class="tracker-section" id="tr-lifting" style="display:none">
     <div class="card">
       <div class="card-title">Log a Lift</div>
       <div class="form-row">
-        <div class="form-group">
-          <label class="form-label">Date</label>
-          <input type="date" class="form-input" id="lift-date">
-        </div>
-        <div class="form-group">
-          <label class="form-label">Day</label>
+        <div class="form-group"><label class="form-label">Date</label><input type="date" class="form-input" id="lift-date"></div>
+        <div class="form-group"><label class="form-label">Day</label>
           <select class="form-input" id="lift-day-sel" onchange="populateExercises()">
             <option value="">Select...</option>
             <option>Monday — Lower Strength</option>
@@ -359,63 +337,32 @@ input, select, textarea { font-family: inherit; }
           </select>
         </div>
       </div>
-      <div class="form-group">
-        <label class="form-label">Exercise</label>
-        <input type="text" class="form-input" id="lift-exercise" placeholder="e.g. Back Squat" list="exercise-suggestions">
-        <datalist id="exercise-suggestions"></datalist>
-      </div>
+      <div class="form-group"><label class="form-label">Exercise</label><input type="text" class="form-input" id="lift-exercise" placeholder="e.g. Back Squat" list="exercise-suggestions"><datalist id="exercise-suggestions"></datalist></div>
       <div id="sets-container"></div>
       <button class="add-set-btn" onclick="addSet()">+ Add Set</button>
-      <div class="form-group" style="margin-top:12px">
-        <label class="form-label">Notes</label>
-        <textarea class="form-input" id="lift-notes" rows="2" placeholder="Form notes, how it felt..."></textarea>
-      </div>
+      <div class="form-group" style="margin-top:12px"><label class="form-label">Notes</label><textarea class="form-input" id="lift-notes" rows="2" placeholder="Form notes, how it felt..."></textarea></div>
       <button class="submit-btn" onclick="saveLift()" style="margin-top:10px">Save Exercise</button>
     </div>
     <div class="section-divider"><hr><span>Lift History</span><hr></div>
     <div id="lift-log"></div>
   </div>
 
-  <!-- MACROS TRACKER -->
+  <!-- MACROS -->
   <div class="tracker-section" id="tr-macros" style="display:none">
     <div class="card">
       <div class="card-title">Log Today's Macros</div>
-      <div class="form-group">
-        <label class="form-label">Date</label>
-        <input type="date" class="form-input" id="macro-date">
+      <div class="form-group"><label class="form-label">Date</label><input type="date" class="form-input" id="macro-date"></div>
+      <div class="form-row">
+        <div class="form-group"><label class="form-label">Calories</label><input type="number" class="form-input" id="macro-cal" placeholder="2500"></div>
+        <div class="form-group"><label class="form-label">Protein (g)</label><input type="number" class="form-input" id="macro-protein" placeholder="195"></div>
       </div>
       <div class="form-row">
-        <div class="form-group">
-          <label class="form-label">Calories</label>
-          <input type="number" class="form-input" id="macro-cal" placeholder="2500">
-        </div>
-        <div class="form-group">
-          <label class="form-label">Protein (g)</label>
-          <input type="number" class="form-input" id="macro-protein" placeholder="195">
-        </div>
+        <div class="form-group"><label class="form-label">Carbs (g)</label><input type="number" class="form-input" id="macro-carbs" placeholder="250"></div>
+        <div class="form-group"><label class="form-label">Fat (g)</label><input type="number" class="form-input" id="macro-fat" placeholder="80"></div>
       </div>
       <div class="form-row">
-        <div class="form-group">
-          <label class="form-label">Carbs (g)</label>
-          <input type="number" class="form-input" id="macro-carbs" placeholder="250">
-        </div>
-        <div class="form-group">
-          <label class="form-label">Fat (g)</label>
-          <input type="number" class="form-input" id="macro-fat" placeholder="80">
-        </div>
-      </div>
-      <div class="form-row">
-        <div class="form-group">
-          <label class="form-label">Fiber (g)</label>
-          <input type="number" class="form-input" id="macro-fiber" placeholder="40">
-        </div>
-        <div class="form-group">
-          <label class="form-label">Day Type</label>
-          <select class="form-input" id="macro-type">
-            <option>Training Day</option>
-            <option>Rest Day</option>
-          </select>
-        </div>
+        <div class="form-group"><label class="form-label">Fiber (g)</label><input type="number" class="form-input" id="macro-fiber" placeholder="40"></div>
+        <div class="form-group"><label class="form-label">Day Type</label><select class="form-input" id="macro-type"><option>Training Day</option><option>Rest Day</option></select></div>
       </div>
       <button class="submit-btn" onclick="saveMacros()">Save Macros</button>
     </div>
@@ -423,35 +370,20 @@ input, select, textarea { font-family: inherit; }
     <div id="macro-log"></div>
   </div>
 
-  <!-- WEIGHT TRACKER -->
+  <!-- WEIGHT -->
   <div class="tracker-section" id="tr-weight" style="display:none">
     <div class="card">
       <div class="card-title">Log Weekly Weight</div>
-      <div class="form-group">
-        <label class="form-label">Starting Weight (lbs) — set once</label>
-        <input type="number" class="form-input" id="start-weight" placeholder="235" step="0.1">
-      </div>
+      <div class="form-group"><label class="form-label">Starting Weight (lbs) — set once</label><input type="number" class="form-input" id="start-weight" placeholder="235" step="0.1"></div>
       <div class="form-row">
-        <div class="form-group">
-          <label class="form-label">Date</label>
-          <input type="date" class="form-input" id="weight-date">
-        </div>
-        <div class="form-group">
-          <label class="form-label">Weight (lbs)</label>
-          <input type="number" class="form-input" id="weight-val" placeholder="234.5" step="0.1">
-        </div>
+        <div class="form-group"><label class="form-label">Date</label><input type="date" class="form-input" id="weight-date"></div>
+        <div class="form-group"><label class="form-label">Weight (lbs)</label><input type="number" class="form-input" id="weight-val" placeholder="234.5" step="0.1"></div>
       </div>
       <button class="submit-btn" onclick="saveWeight()">Save Weight</button>
     </div>
-    <div id="weight-stats" style="display:none">
-      <div class="card" id="weight-summary-card"></div>
-    </div>
+    <div id="weight-stats" style="display:none"><div class="card" id="weight-summary-card"></div></div>
     <div class="section-divider"><hr><span>Weight Chart</span><hr></div>
-    <div class="card">
-      <div class="weight-chart" id="weight-chart-wrap">
-        <div class="empty-state">No weigh-ins logged yet.</div>
-      </div>
-    </div>
+    <div class="card"><div class="weight-chart" id="weight-chart-wrap"><div class="empty-state">No weigh-ins logged yet.</div></div></div>
     <div class="section-divider"><hr><span>Weigh-in History</span><hr></div>
     <div id="weight-log"></div>
   </div>
@@ -460,8 +392,38 @@ input, select, textarea { font-family: inherit; }
 </div><!-- end content -->
 
 <script>
-// ─── DATA ───────────────────────────────────────────────────────────
-const runSchedule = [
+// ─── SERVICE WORKER ───────────────────────────────────────────────────
+if('serviceWorker' in navigator){
+  const swCode=`
+    const CACHE='hm-v1';
+    const URL=self.location.href.replace('sw.js','');
+    self.addEventListener('install',e=>{
+      e.waitUntil(caches.open(CACHE).then(c=>c.add('/')).catch(()=>{}));
+      self.skipWaiting();
+    });
+    self.addEventListener('activate',e=>{
+      e.waitUntil(caches.keys().then(keys=>Promise.all(keys.filter(k=>k!==CACHE).map(k=>caches.delete(k)))));
+      self.clients.claim();
+    });
+    self.addEventListener('fetch',e=>{
+      e.respondWith(caches.match(e.request).then(cached=>{
+        const fresh=fetch(e.request).then(res=>{
+          if(res.ok){const c=res.clone();caches.open(CACHE).then(ch=>ch.put(e.request,c));}
+          return res;
+        }).catch(()=>cached);
+        return cached||fresh;
+      }));
+    });`;
+  const blob=new Blob([swCode],{type:'application/javascript'});
+  const swURL=URL.createObjectURL(blob);
+  navigator.serviceWorker.register(swURL).catch(()=>{});
+}
+
+window.addEventListener('online',()=>document.getElementById('offline-banner').style.display='none');
+window.addEventListener('offline',()=>document.getElementById('offline-banner').style.display='block');
+
+// ─── DATA ─────────────────────────────────────────────────────────────
+const runSchedule=[
   {week:1,phase:1,wed:"1/2 × 8",sat:"1/2 × 8",sun:"1/2 × 8",note:"Walk/Run: run min / walk min × rounds"},
   {week:2,phase:1,wed:"1/2 × 8",sat:"1/2 × 8",sun:"1/2 × 8",note:""},
   {week:3,phase:1,wed:"2/1 × 8",sat:"2/1 × 8",sun:"2/1 × 8",note:""},
@@ -548,9 +510,9 @@ const saunaData=[
   {timing:"Avoid",duration:"",temp:"",avoid:true,note:"Do NOT use sauna before any run or lift. Do NOT use after heavy lower days — adds cardiovascular stress on an already-taxed system."}
 ];
 
-// ─── STORAGE ─────────────────────────────────────────────────────────
+// ─── STORAGE ──────────────────────────────────────────────────────────
 function load(key){try{return JSON.parse(localStorage.getItem(key))||[];}catch{return[];}}
-function save(key,data){try{localStorage.setItem(key,JSON.stringify(data));}catch{alert('Storage not available in this browser. Data will not persist.');}}
+function save(key,data){try{localStorage.setItem(key,JSON.stringify(data));}catch{alert('Storage unavailable. Try opening via Safari.');}}
 function loadVal(key,def=''){return localStorage.getItem(key)||def;}
 function saveVal(key,v){try{localStorage.setItem(key,v);}catch{}}
 
@@ -563,26 +525,17 @@ function switchTab(id,btn){
   window.scrollTo(0,0);
   if(id==='tracker') refreshAllLogs();
 }
-
 function switchTracker(id,btn){
   document.querySelectorAll('.tracker-section').forEach(s=>s.style.display='none');
   document.querySelectorAll('.tracker-tab').forEach(b=>b.classList.remove('active'));
   document.getElementById('tr-'+id).style.display='block';
   btn.classList.add('active');
-  if(id==='weight') renderWeightChart();
+  if(id==='weight'){renderWeightChart();renderWeightSummary();}
 }
 
-// ─── PACE CALC ────────────────────────────────────────────────────────
-function timeToSecs(t){
-  const p=t.trim().split(':').map(Number);
-  if(p.length===2) return p[0]*60+p[1];
-  if(p.length===3) return p[0]*3600+p[1]*60+p[2];
-  return 0;
-}
-function secsToMMSS(s){
-  const m=Math.floor(s/60), sec=Math.round(s%60);
-  return m+':'+(sec<10?'0':'')+sec;
-}
+// ─── PACE ─────────────────────────────────────────────────────────────
+function timeToSecs(t){const p=t.trim().split(':').map(Number);if(p.length===2)return p[0]*60+p[1];if(p.length===3)return p[0]*3600+p[1]*60+p[2];return 0;}
+function secsToMMSS(s){const m=Math.floor(s/60),sec=Math.round(s%60);return m+':'+(sec<10?'0':'')+sec;}
 function calcPace(){
   const dist=parseFloat(document.getElementById('run-dist').value);
   const t=document.getElementById('run-time').value;
@@ -590,12 +543,11 @@ function calcPace(){
   if(!dist||!t){pd.style.display='none';return;}
   const secs=timeToSecs(t);
   if(!secs||!dist){pd.style.display='none';return;}
-  const pace=secs/dist;
-  document.getElementById('pace-val').textContent=secsToMMSS(pace);
+  document.getElementById('pace-val').textContent=secsToMMSS(secs/dist);
   pd.style.display='block';
 }
 
-// ─── RUN TRACKER ──────────────────────────────────────────────────────
+// ─── RUNS ─────────────────────────────────────────────────────────────
 function saveRun(){
   const date=document.getElementById('run-date').value;
   const dist=document.getElementById('run-dist').value;
@@ -603,85 +555,52 @@ function saveRun(){
   const feel=document.getElementById('run-feel').value;
   const notes=document.getElementById('run-notes').value;
   if(!date||!dist||!time){alert('Please fill in date, distance, and time.');return;}
-  const secs=timeToSecs(time);
-  const pace=dist?secsToMMSS(secs/parseFloat(dist)):'—';
+  const pace=dist?secsToMMSS(timeToSecs(time)/parseFloat(dist)):'—';
   const runs=load('runs');
   runs.unshift({id:Date.now(),date,dist,time,pace,feel,notes});
   save('runs',runs);
-  document.getElementById('run-date').value='';
-  document.getElementById('run-dist').value='';
-  document.getElementById('run-time').value='';
+  ['run-date','run-dist','run-time','run-notes'].forEach(id=>document.getElementById(id).value='');
   document.getElementById('run-feel').value='';
-  document.getElementById('run-notes').value='';
   document.getElementById('pace-display').style.display='none';
+  setDefaultDates();
   renderRunLog();
 }
-
 function renderRunLog(){
   const runs=load('runs');
   const el=document.getElementById('run-log');
   if(!runs.length){el.innerHTML='<div class="empty-state">No runs logged yet. Lace up! 👟</div>';return;}
-  el.innerHTML=runs.map(r=>`
-    <div class="log-entry">
-      <button class="delete-btn" onclick="deleteEntry('runs',${r.id})">×</button>
-      <div class="log-date">${r.date}</div>
-      <div class="log-main">${r.dist} mi &nbsp;·&nbsp; ${r.time} &nbsp;·&nbsp; <span style="color:#10B981">${r.pace}/mi</span></div>
-      ${r.feel?`<div class="log-detail">${r.feel}</div>`:''}
-      ${r.notes?`<div class="log-notes">${r.notes}</div>`:''}
-    </div>`).join('');
+  el.innerHTML=runs.map(r=>`<div class="log-entry">
+    <button class="delete-btn" onclick="deleteEntry('runs',${r.id})">×</button>
+    <div class="log-date">${r.date}</div>
+    <div class="log-main">${r.dist} mi · ${r.time} · <span style="color:#10B981">${r.pace}/mi</span></div>
+    ${r.feel?`<div class="log-detail">${r.feel}</div>`:''}
+    ${r.notes?`<div class="log-notes">${r.notes}</div>`:''}
+  </div>`).join('');
 }
 
-// ─── LIFTING TRACKER ──────────────────────────────────────────────────
+// ─── LIFTING ──────────────────────────────────────────────────────────
 let setCount=1;
 function populateExercises(){
   const day=document.getElementById('lift-day-sel').value;
   const dl=document.getElementById('exercise-suggestions');
   dl.innerHTML='';
   const map={'Monday — Lower Strength':0,'Tuesday — Upper Strength':1,'Thursday — Lower Hypertrophy':2,'Friday — Upper Hypertrophy':3};
-  if(day in map){
-    liftingDays[map[day]].exercises.forEach(e=>{
-      const opt=document.createElement('option');opt.value=e;dl.appendChild(opt);
-    });
-  }
+  if(day in map) liftingDays[map[day]].exercises.forEach(e=>{const o=document.createElement('option');o.value=e;dl.appendChild(o);});
 }
-
 function addSet(){
   setCount++;
   const c=document.getElementById('sets-container');
-  const row=document.createElement('div');
-  row.className='set-row';
-  row.id='set-row-'+setCount;
-  row.innerHTML=`
-    <span class="set-label">Set ${setCount}</span>
-    <input type="number" class="set-input" placeholder="lbs/DB" id="set-w-${setCount}" step="2.5">
-    <input type="number" class="set-input" placeholder="reps" id="set-r-${setCount}">
-    <input type="text" class="set-input" placeholder="note" id="set-n-${setCount}">
-    <button class="rm-set-btn" onclick="removeSet(${setCount})">×</button>`;
+  const row=document.createElement('div');row.className='set-row';row.id='set-row-'+setCount;
+  row.innerHTML=`<span class="set-label">Set ${setCount}</span><input type="number" class="set-input" placeholder="lbs/DB" id="set-w-${setCount}" step="2.5"><input type="number" class="set-input" placeholder="reps" id="set-r-${setCount}"><input type="text" class="set-input" placeholder="note" id="set-n-${setCount}"><button class="rm-set-btn" onclick="removeSet(${setCount})">×</button>`;
   c.appendChild(row);
 }
-
-function removeSet(n){
-  const el=document.getElementById('set-row-'+n);
-  if(el) el.remove();
-}
-
+function removeSet(n){const el=document.getElementById('set-row-'+n);if(el)el.remove();}
 function initSets(){
   document.getElementById('sets-container').innerHTML=`
-    <div class="form-row-3" style="margin-bottom:4px">
-      <span class="form-label" style="margin:0">Weight (lbs/DB)</span>
-      <span class="form-label" style="margin:0">Reps</span>
-      <span class="form-label" style="margin:0">Note</span>
-    </div>
-    <div class="set-row" id="set-row-1">
-      <span class="set-label">Set 1</span>
-      <input type="number" class="set-input" placeholder="lbs/DB" id="set-w-1" step="2.5">
-      <input type="number" class="set-input" placeholder="reps" id="set-r-1">
-      <input type="text" class="set-input" placeholder="note" id="set-n-1">
-      <span></span>
-    </div>`;
+    <div class="form-row-3" style="margin-bottom:4px"><span class="form-label" style="margin:0">Weight (lbs/DB)</span><span class="form-label" style="margin:0">Reps</span><span class="form-label" style="margin:0">Note</span></div>
+    <div class="set-row" id="set-row-1"><span class="set-label">Set 1</span><input type="number" class="set-input" placeholder="lbs/DB" id="set-w-1" step="2.5"><input type="number" class="set-input" placeholder="reps" id="set-r-1"><input type="text" class="set-input" placeholder="note" id="set-n-1"><span></span></div>`;
   setCount=1;
 }
-
 function saveLift(){
   const date=document.getElementById('lift-date').value;
   const day=document.getElementById('lift-day-sel').value;
@@ -698,19 +617,18 @@ function saveLift(){
   const lifts=load('lifts');
   lifts.unshift({id:Date.now(),date,day,exercise,sets,notes});
   save('lifts',lifts);
-  document.getElementById('lift-date').value='';
   document.getElementById('lift-exercise').value='';
   document.getElementById('lift-notes').value='';
   initSets();
+  setDefaultDates();
   renderLiftLog();
 }
-
 function renderLiftLog(){
   const lifts=load('lifts');
   const el=document.getElementById('lift-log');
   if(!lifts.length){el.innerHTML='<div class="empty-state">No lifts logged yet. Time to get under the bar. 🏋️</div>';return;}
   el.innerHTML=lifts.map(l=>{
-    const setStr=l.sets.map((s,i)=>`<span style="color:#aaa;font-size:11px">S${i+1}: ${s.w?s.w+'lbs':'—'} × ${s.r||'—'}${s.n?' ('+s.n+')':''}</span>`).join(' &nbsp;');
+    const setStr=l.sets.map((s,i)=>`<span style="color:#aaa;font-size:11px">S${i+1}: ${s.w?s.w+'lbs':'—'} × ${s.r||'—'}${s.n?' ('+s.n+')':''}</span>`).join(' · ');
     return`<div class="log-entry">
       <button class="delete-btn" onclick="deleteEntry('lifts',${l.id})">×</button>
       <div class="log-date">${l.date}${l.day?' · '+l.day:''}</div>
@@ -721,48 +639,26 @@ function renderLiftLog(){
   }).join('');
 }
 
-// ─── MACROS TRACKER ───────────────────────────────────────────────────
-const macroTargets={cal:2500,protein:195,carbs:250,fat:80,fiber:40};
-const macroColors={protein:'#E8532A',carbs:'#F59E0B',fat:'#3B82F6',fiber:'#10B981'};
-
+// ─── MACROS ───────────────────────────────────────────────────────────
 function saveMacros(){
   const date=document.getElementById('macro-date').value;
   if(!date){alert('Please enter a date.');return;}
-  const entry={
-    id:Date.now(),date,
-    cal:document.getElementById('macro-cal').value,
-    protein:document.getElementById('macro-protein').value,
-    carbs:document.getElementById('macro-carbs').value,
-    fat:document.getElementById('macro-fat').value,
-    fiber:document.getElementById('macro-fiber').value,
-    type:document.getElementById('macro-type').value
-  };
-  const macros=load('macros');
-  macros.unshift(entry);
-  save('macros',macros);
+  const entry={id:Date.now(),date,cal:document.getElementById('macro-cal').value,protein:document.getElementById('macro-protein').value,carbs:document.getElementById('macro-carbs').value,fat:document.getElementById('macro-fat').value,fiber:document.getElementById('macro-fiber').value,type:document.getElementById('macro-type').value};
+  const macros=load('macros');macros.unshift(entry);save('macros',macros);
   ['macro-date','macro-cal','macro-protein','macro-carbs','macro-fat','macro-fiber'].forEach(id=>document.getElementById(id).value='');
-  renderMacroLog();
+  setDefaultDates();renderMacroLog();
 }
-
 function macroBar(label,val,target,color){
   const pct=Math.min(100,Math.round((val/target)*100));
   const over=val>target;
-  return`<div class="macro-bar-wrap">
-    <div class="macro-bar-label">
-      <span style="color:${color};font-weight:600">${label}</span>
-      <span style="color:${over?'#EF4444':'#aaa'}">${val}g / ${target}g (${pct}%)</span>
-    </div>
-    <div class="macro-bar-bg"><div class="macro-bar-fill" style="width:${pct}%;background:${over?'#EF4444':color}"></div></div>
-  </div>`;
+  return`<div class="macro-bar-wrap"><div class="macro-bar-label"><span style="color:${color};font-weight:600">${label}</span><span style="color:${over?'#EF4444':'#aaa'}">${val}g / ${target}g (${pct}%)</span></div><div class="macro-bar-bg"><div class="macro-bar-fill" style="width:${pct}%;background:${over?'#EF4444':color}"></div></div></div>`;
 }
-
 function renderMacroLog(){
   const macros=load('macros');
   const el=document.getElementById('macro-log');
   if(!macros.length){el.innerHTML='<div class="empty-state">No macros logged yet. Track your first day! 🥗</div>';return;}
   el.innerHTML=macros.map(m=>{
     const tCal=m.type==='Rest Day'?2300:2500;
-    const calPct=Math.min(100,Math.round((m.cal/tCal)*100));
     const calOver=m.cal>tCal;
     return`<div class="log-entry">
       <button class="delete-btn" onclick="deleteEntry('macros',${m.id})">×</button>
@@ -778,7 +674,7 @@ function renderMacroLog(){
   }).join('');
 }
 
-// ─── WEIGHT TRACKER ───────────────────────────────────────────────────
+// ─── WEIGHT ───────────────────────────────────────────────────────────
 function saveWeight(){
   const sw=document.getElementById('start-weight').value;
   const date=document.getElementById('weight-date').value;
@@ -791,11 +687,9 @@ function saveWeight(){
   save('weights',weights);
   document.getElementById('weight-date').value='';
   document.getElementById('weight-val').value='';
-  renderWeightLog();
-  renderWeightChart();
-  renderWeightSummary();
+  setDefaultDates();
+  renderWeightLog();renderWeightChart();renderWeightSummary();
 }
-
 function renderWeightSummary(){
   const weights=load('weights');
   const sw=parseFloat(loadVal('startWeight',235));
@@ -805,48 +699,37 @@ function renderWeightSummary(){
   el.style.display='block';
   const latest=weights[weights.length-1].val;
   const lost=sw-latest;
-  const first=weights[0].val;
-  const trend=weights.length>1?(weights[weights.length-1].val-first)/(weights.length-1):0;
-  card.innerHTML=`
-    <div class="card-title">⚖️ Weight Summary</div>
+  const trend=weights.length>1?(weights[weights.length-1].val-weights[0].val)/(weights.length-1):0;
+  card.innerHTML=`<div class="card-title">⚖️ Weight Summary</div>
     <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;text-align:center">
       <div><div style="font-size:20px;font-weight:800;color:#E8532A">${latest}</div><div style="font-size:11px;color:#888">Current (lbs)</div></div>
-      <div><div style="font-size:20px;font-weight:800;color:${lost>=0?'#10B981':'#EF4444'}">${lost>=0?'-':'+'} ${Math.abs(lost).toFixed(1)}</div><div style="font-size:11px;color:#888">Total Lost (lbs)</div></div>
-      <div><div style="font-size:20px;font-weight:800;color:${trend<=0?'#10B981':'#EF4444'}">${trend<=0?'↓':'↑'} ${Math.abs(trend).toFixed(1)}</div><div style="font-size:11px;color:#888">Avg/Week (lbs)</div></div>
+      <div><div style="font-size:20px;font-weight:800;color:${lost>=0?'#10B981':'#EF4444'}">${lost>=0?'-':'+'}${Math.abs(lost).toFixed(1)}</div><div style="font-size:11px;color:#888">Total Lost</div></div>
+      <div><div style="font-size:20px;font-weight:800;color:${trend<=0?'#10B981':'#EF4444'}">${trend<=0?'↓':'↑'}${Math.abs(trend).toFixed(1)}</div><div style="font-size:11px;color:#888">Avg/Week</div></div>
     </div>`;
 }
-
 function renderWeightChart(){
   const weights=load('weights');
   const wrap=document.getElementById('weight-chart-wrap');
   if(!weights.length){wrap.innerHTML='<div class="empty-state">No weigh-ins logged yet.</div>';return;}
   const vals=weights.map(w=>w.val);
   const dates=weights.map(w=>w.date.slice(5));
-  const min=Math.min(...vals)-2, max=Math.max(...vals)+2;
+  const min=Math.min(...vals)-2,max=Math.max(...vals)+2;
   const W=340,H=140,pad=36;
-  const xScale=(i)=>pad+(i/(weights.length-1||1))*(W-pad*2);
-  const yScale=(v)=>H-pad-((v-min)/(max-min||1))*(H-pad*2);
-  let pathD=weights.map((w,i)=>(i===0?'M':'L')+xScale(i)+','+yScale(w.val)).join(' ');
-  let dots=weights.map((w,i)=>`<circle cx="${xScale(i)}" cy="${yScale(w.val)}" r="4" fill="#E8532A"/>`).join('');
+  const xS=(i)=>pad+(i/(weights.length-1||1))*(W-pad*2);
+  const yS=(v)=>H-pad-((v-min)/(max-min||1))*(H-pad*2);
+  const pathD=weights.map((w,i)=>(i===0?'M':'L')+xS(i)+','+yS(w.val)).join(' ');
+  const dots=weights.map((w,i)=>`<circle cx="${xS(i)}" cy="${yS(w.val)}" r="4" fill="#E8532A"/>`).join('');
   const sw=parseFloat(loadVal('startWeight',235));
-  const swY=yScale(sw);
-  const gridLines=[min+1,min+(max-min)/2,max-1].map(v=>{
-    const y=yScale(v);
-    return`<line x1="${pad}" y1="${y}" x2="${W-pad}" y2="${y}" stroke="#2A2A2A" stroke-width="1"/>
-           <text x="${pad-4}" y="${y+4}" fill="#555" font-size="9" text-anchor="end">${Math.round(v)}</text>`;
-  }).join('');
-  const xLabels=weights.filter((_,i)=>i===0||i===weights.length-1||(weights.length>4&&i%Math.ceil(weights.length/4)===0))
-    .map((w,_,arr)=>{const i=weights.indexOf(w);return`<text x="${xScale(i)}" y="${H-4}" fill="#555" font-size="9" text-anchor="middle">${dates[i]}</text>`;}).join('');
+  const swY=yS(sw);
+  const gridLines=[min+1,min+(max-min)/2,max-1].map(v=>{const y=yS(v);return`<line x1="${pad}" y1="${y}" x2="${W-pad}" y2="${y}" stroke="#2A2A2A" stroke-width="1"/><text x="${pad-4}" y="${y+4}" fill="#555" font-size="9" text-anchor="end">${Math.round(v)}</text>`;}).join('');
+  const xLabels=weights.filter((_,i)=>i===0||i===weights.length-1).map((w)=>{const i=weights.indexOf(w);return`<text x="${xS(i)}" y="${H-4}" fill="#555" font-size="9" text-anchor="middle">${dates[i]}</text>`;}).join('');
   wrap.innerHTML=`<svg viewBox="0 0 ${W} ${H}" class="chart-svg">
     ${gridLines}
-    ${swY>pad&&swY<H-pad?`<line x1="${pad}" y1="${swY}" x2="${W-pad}" y2="${swY}" stroke="#E8532A" stroke-width="1" stroke-dasharray="4,3" opacity="0.4"/>
-    <text x="${W-pad+2}" y="${swY+4}" fill="#E8532A" font-size="8" opacity="0.6">Start</text>`:''}
+    ${swY>pad&&swY<H-pad?`<line x1="${pad}" y1="${swY}" x2="${W-pad}" y2="${swY}" stroke="#E8532A" stroke-width="1" stroke-dasharray="4,3" opacity="0.4"/><text x="${W-pad+2}" y="${swY+4}" fill="#E8532A" font-size="8" opacity="0.6">Start</text>`:''}
     <path d="${pathD}" fill="none" stroke="#E8532A" stroke-width="2"/>
-    ${dots}
-    ${xLabels}
+    ${dots}${xLabels}
   </svg>`;
 }
-
 function renderWeightLog(){
   const weights=load('weights');
   const el=document.getElementById('weight-log');
@@ -858,65 +741,25 @@ function renderWeightLog(){
     return`<div class="log-entry">
       <button class="delete-btn" onclick="deleteWeightEntry(${w.id})">×</button>
       <div class="log-date">${w.date}</div>
-      <div class="log-main">${w.val} lbs ${diff!==null?`<span style="color:${diff<=0?'#10B981':'#EF4444'};font-size:13px">${diff<=0?'▼':'▲'} ${Math.abs(diff).toFixed(1)} lbs</span>`:''}</div>
+      <div class="log-main">${w.val} lbs ${diff!==null?`<span style="color:${diff<=0?'#10B981':'#EF4444'};font-size:13px">${diff<=0?'▼':'▲'}${Math.abs(diff).toFixed(1)} lbs</span>`:''}</div>
     </div>`;
   }).join('');
 }
+function deleteWeightEntry(id){let w=load('weights');w=w.filter(x=>x.id!==id);save('weights',w);renderWeightLog();renderWeightChart();renderWeightSummary();}
+function deleteEntry(key,id){let d=load(key);d=d.filter(x=>x.id!==id);save(key,d);if(key==='runs')renderRunLog();else if(key==='lifts')renderLiftLog();else if(key==='macros')renderMacroLog();}
+function refreshAllLogs(){renderRunLog();renderLiftLog();renderMacroLog();renderWeightLog();renderWeightChart();renderWeightSummary();const sw=loadVal('startWeight','');if(sw)document.getElementById('start-weight').value=sw;}
 
-function deleteWeightEntry(id){
-  let weights=load('weights');
-  weights=weights.filter(w=>w.id!==id);
-  save('weights',weights);
-  renderWeightLog();renderWeightChart();renderWeightSummary();
-}
-
-function deleteEntry(key,id){
-  let data=load(key);
-  data=data.filter(d=>d.id!==id);
-  save(key,data);
-  if(key==='runs') renderRunLog();
-  else if(key==='lifts') renderLiftLog();
-  else if(key==='macros') renderMacroLog();
-}
-
-function refreshAllLogs(){
-  renderRunLog(); renderLiftLog(); renderMacroLog(); renderWeightLog(); renderWeightChart(); renderWeightSummary();
-  const sw=loadVal('startWeight','');
-  if(sw) document.getElementById('start-weight').value=sw;
-}
-
-// ─── RENDER PLAN SECTIONS ─────────────────────────────────────────────
-function renderRun(){
+// ─── RENDER PLAN ──────────────────────────────────────────────────────
+function renderRunPlan(){
   const container=document.getElementById('run-weeks');
   runSchedule.forEach(w=>{
     const c=phaseColors[w.phase];
     const div=document.createElement('div');div.className='week-row';
-    div.innerHTML=`
-      <button class="week-btn" onclick="toggleWeek(${w.week},this)">
-        <div class="week-num" style="background:${c}22;border:1px solid ${c}44;color:${c}">${w.week}</div>
-        <div class="week-info"><div class="week-info-title">Week ${w.week}</div><div class="week-info-sub">${phaseNames[w.phase]}</div></div>
-        ${w.week===20?'<span class="week-badge" style="color:#F59E0B">PEAK</span>':''}
-        ${w.week===22?'<span class="week-badge" style="color:#E8532A">RACE</span>':''}
-        <span class="week-chevron">▼</span>
-      </button>
-      <div class="week-detail" id="week-${w.week}">
-        <div class="run-grid">
-          <div class="run-cell"><div class="run-day">Wed</div><div class="run-val">${w.wed}</div></div>
-          <div class="run-cell"><div class="run-day">Sat</div><div class="run-val">${w.sat}</div></div>
-          <div class="run-cell"><div class="run-day">Sun</div><div class="run-val" style="${w.week===22?'color:#E8532A':''}">${w.sun}</div></div>
-        </div>
-        ${w.note?`<div class="week-note">💡 ${w.note}</div>`:''}
-      </div>`;
+    div.innerHTML=`<button class="week-btn" onclick="toggleWeek(${w.week},this)"><div class="week-num" style="background:${c}22;border:1px solid ${c}44;color:${c}">${w.week}</div><div class="week-info"><div class="week-info-title">Week ${w.week}</div><div class="week-info-sub">${phaseNames[w.phase]}</div></div>${w.week===20?'<span class="week-badge" style="color:#F59E0B">PEAK</span>':''}${w.week===22?'<span class="week-badge" style="color:#E8532A">RACE</span>':''}<span class="week-chevron">▼</span></button><div class="week-detail" id="week-${w.week}"><div class="run-grid"><div class="run-cell"><div class="run-day">Wed</div><div class="run-val">${w.wed}</div></div><div class="run-cell"><div class="run-day">Sat</div><div class="run-val">${w.sat}</div></div><div class="run-cell"><div class="run-day">Sun</div><div class="run-val" style="${w.week===22?'color:#E8532A':''}">${w.sun}</div></div></div>${w.note?`<div class="week-note">💡 ${w.note}</div>`:''}</div>`;
     container.appendChild(div);
   });
 }
-
-function toggleWeek(num,btn){
-  const d=document.getElementById('week-'+num);
-  const o=d.classList.contains('open');
-  d.classList.toggle('open');btn.classList.toggle('open');
-  btn.querySelector('.week-chevron').textContent=o?'▼':'▲';
-}
+function toggleWeek(num,btn){const d=document.getElementById('week-'+num);const o=d.classList.contains('open');d.classList.toggle('open');btn.classList.toggle('open');btn.querySelector('.week-chevron').textContent=o?'▼':'▲';}
 
 function renderLiftPlan(){
   const c=document.getElementById('lift-days');
@@ -927,51 +770,31 @@ function renderLiftPlan(){
     c.appendChild(div);
   });
   const sc=document.getElementById('swaps');
-  mobilitySwaps.forEach(s=>{
-    const div=document.createElement('div');div.className='swap-row';
-    div.innerHTML=`<div class="swap-tag">SWAP</div><div><div class="swap-name">${s.swap}</div><div class="swap-benefit">${s.benefit}</div></div>`;
-    sc.appendChild(div);
-  });
+  mobilitySwaps.forEach(s=>{const div=document.createElement('div');div.className='swap-row';div.innerHTML=`<div class="swap-tag">SWAP</div><div><div class="swap-name">${s.swap}</div><div class="swap-benefit">${s.benefit}</div></div>`;sc.appendChild(div);});
 }
 
-function renderStretch(){
+function renderStretchPlan(){
   const pre=document.getElementById('pre-stretch');
-  preStretch.forEach((s,i)=>{
-    const d=document.createElement('div');d.className='stretch-item';
-    d.innerHTML=`<div class="stretch-num" style="background:#3B82F622;border:1px solid #3B82F644;color:#3B82F6">${i+1}</div><div><div class="stretch-name">${s.name} <span class="stretch-duration" style="color:#E8532A">— ${s.duration}</span></div><div class="stretch-target">${s.target}</div></div>`;
-    pre.appendChild(d);
-  });
+  preStretch.forEach((s,i)=>{const d=document.createElement('div');d.className='stretch-item';d.innerHTML=`<div class="stretch-num" style="background:#3B82F622;border:1px solid #3B82F644;color:#3B82F6">${i+1}</div><div><div class="stretch-name">${s.name} <span class="stretch-duration" style="color:#E8532A">— ${s.duration}</span></div><div class="stretch-target">${s.target}</div></div>`;pre.appendChild(d);});
   const post=document.getElementById('post-stretch');
-  postStretch.forEach((s,i)=>{
-    const d=document.createElement('div');d.className='stretch-item';
-    d.innerHTML=`<div class="stretch-num" style="background:#10B98122;border:1px solid #10B98144;color:#10B981">${i+1}</div><div><div class="stretch-name">${s.name} <span class="stretch-duration" style="color:#10B981">— ${s.duration}</span></div><div class="stretch-target">${s.target}</div></div>`;
-    post.appendChild(d);
-  });
+  postStretch.forEach((s,i)=>{const d=document.createElement('div');d.className='stretch-item';d.innerHTML=`<div class="stretch-num" style="background:#10B98122;border:1px solid #10B98144;color:#10B981">${i+1}</div><div><div class="stretch-name">${s.name} <span class="stretch-duration" style="color:#10B981">— ${s.duration}</span></div><div class="stretch-target">${s.target}</div></div>`;post.appendChild(d);});
   const sauna=document.getElementById('sauna-items');
-  saunaData.forEach(s=>{
-    const d=document.createElement('div');d.className='sauna-item';
-    d.style.background=s.avoid?'#1E0808':'#1A1208';
-    d.style.border=`1px solid ${s.avoid?'#EF444433':'#F59E0B33'}`;
-    d.innerHTML=`<div class="sauna-header"><div class="sauna-timing" style="color:${s.avoid?'#EF4444':'#F59E0B'}">${s.timing}</div>${s.duration?`<div class="sauna-badges"><span class="sauna-badge">${s.duration}</span><span class="sauna-badge">${s.temp}</span></div>`:''}</div><div class="sauna-note">${s.note}</div>`;
-    sauna.appendChild(d);
-  });
+  saunaData.forEach(s=>{const d=document.createElement('div');d.className='sauna-item';d.style.background=s.avoid?'#1E0808':'#1A1208';d.style.border=`1px solid ${s.avoid?'#EF444433':'#F59E0B33'}`;d.innerHTML=`<div class="sauna-header"><div class="sauna-timing" style="color:${s.avoid?'#EF4444':'#F59E0B'}">${s.timing}</div>${s.duration?`<div class="sauna-badges"><span class="sauna-badge">${s.duration}</span><span class="sauna-badge">${s.temp}</span></div>`:''}</div><div class="sauna-note">${s.note}</div>`;sauna.appendChild(d);});
+}
+
+function setDefaultDates(){
+  const today=new Date().toISOString().split('T')[0];
+  ['run-date','lift-date','macro-date','weight-date'].forEach(id=>{const el=document.getElementById(id);if(el&&!el.value)el.value=today;});
 }
 
 // ─── INIT ─────────────────────────────────────────────────────────────
-function setDefaultDates(){
-  const today=new Date().toISOString().split('T')[0];
-  ['run-date','lift-date','macro-date','weight-date'].forEach(id=>{
-    const el=document.getElementById(id);if(el)el.value=today;
-  });
-}
-
-renderRun();
+renderRunPlan();
 renderLiftPlan();
-renderStretch();
+renderStretchPlan();
 initSets();
 setDefaultDates();
-const sw=loadVal('startWeight','');
-if(sw) document.getElementById('start-weight').value=sw;
+const savedSW=loadVal('startWeight','');
+if(savedSW) document.getElementById('start-weight').value=savedSW;
 </script>
 </body>
 </html>
